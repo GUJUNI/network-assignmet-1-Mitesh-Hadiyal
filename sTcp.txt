@@ -1,0 +1,96 @@
+/*
+NAME : Hadiyal MiteshKumar S.
+ROLL NO : 12
+COURSE : MCA 2
+SUBJECT : ADV. NETWORKING
+*/
+// TCP Program In JAVA
+
+/*
+=============
+Server Side
+=============
+*/
+
+import java.net.*;
+import java.io.*;
+
+public class TCPServer {
+    public static void main(String[] args) throws IOException {
+        ServerSocket serverSocket = null;
+        try {
+            serverSocket = new ServerSocket(9090);
+        } catch (IOException e) {
+            System.err.println("Could not listen on port 9090.");
+            System.exit(1);
+        }
+
+        Socket clientSocket = null;
+        try {
+            clientSocket = serverSocket.accept();
+        } catch (IOException e) {
+            System.err.println("Accept failed.");
+            System.exit(1);
+        }
+
+        PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
+        BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+
+        String inputLine;
+        while ((inputLine = in.readLine()) != null) {
+            int count = inputLine.length();
+            out.println(count);
+        }
+
+        out.close();
+        in.close();
+        clientSocket.close();
+        serverSocket.close();
+    }
+}
+/*
+=============
+Client Side
+=============
+*/
+import java.net.*;
+import java.io.*;
+
+public class TCPClient {
+    public static void main(String[] args) throws IOException {
+        Socket echoSocket = null;
+        PrintWriter out = null;
+        BufferedReader in = null;
+
+        try {javac
+            echoSocket = new Socket("localhost", 9090);
+            out = new PrintWriter(echoSocket.getOutputStream(), true);
+            in = new BufferedReader(new InputStreamReader(echoSocket.getInputStream()));
+        } catch (UnknownHostException e) {
+            System.err.println("Don't know about host: localhost.");
+            System.exit(1);
+        } catch (IOException e) {
+            System.err.println("Couldn't get I/O for the connection to: localhost.");
+            System.exit(1);
+        }
+
+        BufferedReader stdIn = new BufferedReader(new InputStreamReader(System.in));
+        String userInput;
+
+        while ((userInput = stdIn.readLine()) != null) {
+            out.println(userInput);
+            System.out.println("Count of characters in the string: " + in.readLine());
+        }
+
+        out.close();
+        in.close();
+        stdIn.close();
+        echoSocket.close();
+    }
+}
+
+/*
+//OUTPUT
+Enter a string: Hello World!
+Count of characters in the string: 12
+*/
