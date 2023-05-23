@@ -1,0 +1,129 @@
+/*
+NAME : Hadiyal MiteshKumar S.
+ROLL NO : 12
+COURSE : MCA 2
+SUBJECT : ADV. NETWORKING
+*/
+// UDP MULTITHREADING IN JAVA
+
+/*
+============
+Server Side
+============
+*/
+
+import java.io.*;
+import java.net.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+public class VowelCountUDPServer {
+    public static void main(String[] args) {
+        ExecutorService executorService = Executors.newFixedThreadPool(10);
+        DatagramSocket socket = null;
+
+        try {
+            socket = new DatagramSocket(9090);
+
+            while (true) {
+                byte[] receiveBuffer = new byte[1024];
+                DatagramPacket receivePacket = new DatagramPacket(receiveBuffer, receiveBuffer.length);
+                socket.receive(receivePacket);
+                String sentence = new String(receivePacket.getData(), 0, receivePacket.getLength());
+
+                // Create a new worker thread to handle the request
+                WorkerThread workerThread = new WorkerThread(socket, receivePacket.getAddress(), receivePacket.getPort(), sentence);
+                executorService.execute(workerThread);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (socket != null) {
+                socket.close();
+            }
+            executorService.shutdown();
+        }
+    }
+}
+
+class WorkerThread implements Runnable {
+    private final DatagramSocket socket;
+    private final InetAddress clientAddress;
+    private final int clientPort;
+    private final String sentence;
+
+    public WorkerThread(DatagramSocket socket, InetAddress clientAddress, int clientPort, String sentence) {
+        this.socket = socket;
+        this.clientAddress = clientAddress;
+        this.clientPort = clientPort;
+        this.sentence = sentence;
+    }
+
+    @Override
+    public void run() {
+        int vowelCount = 0;
+        for (char c : sentence.toCharArray()) {
+            if (isVowel(c)) {
+                vowelCount++;
+            }
+        }
+
+        byte[] sendBuffer = String.valueOf(vowelCount).getBytes();
+        DatagramPacket sendPacket = new DatagramPacket(sendBuffer, sendBuffer.length, clientAddress, clientPort);
+        try {
+            socket.send(sendPacket);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private boolean isVowel(char c) {
+        c = Character.toLowerCase(c);
+        return (c == 'a' || c == 'e' || c == 'i' || c == 'o' || c == 'u');
+    }
+}
+/*
+============
+Client Side
+============
+*/
+import java.net.*;
+import java.util.Scanner;
+
+public class VowelCountUDPClient {
+    public static void main(String[] args) {
+        DatagramSocket socket = null;
+
+        try {
+            socket = new DatagramSocket();
+            InetAddress serverAddress = InetAddress.getLocalHost();
+            int serverPort = 9090;
+
+            Scanner scanner = new Scanner(System.in);
+            System.out.print("Enter a sentence: ");
+            String sentence = scanner.nextLine();
+
+            byte[] sendBuffer = sentence.getBytes();
+            DatagramPacket sendPacket = new DatagramPacket(sendBuffer, sendBuffer.length, serverAddress, serverPort);
+            socket.send(sendPacket);
+
+            byte[] receiveBuffer = new byte[1024];
+            DatagramPacket receivePacket = new DatagramPacket(receiveBuffer, receiveBuffer.length);
+            socket.receive(receivePacket);
+
+            int vowelCount = Integer.parseInt(new String(receivePacket.getData(), 0, receivePacket.getLength()));
+            System.out.println("The number of vowels in the sentence is: " + vowelCount);
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (socket != null) {
+                socket.close();
+            }
+        }
+    }
+}
+/*
+//OUTPUT
+Enter a sentence: Hello World
+The number of vowels in the sentence is: 3
+*/
